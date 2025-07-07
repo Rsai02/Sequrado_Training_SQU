@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simple App - Dark Theme</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #startPage, #dashboard {
+      background-color: #1f1f1f;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      width: 340px;
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 24px;
+      color: #ffffff;
+    }
+    input[type="text"], input[type="password"], select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      margin: 8px 0 18px 0;
+      border: 1.5px solid #444;
+      border-radius: 8px;
+      background-color: #2a2a2a;
+      color: #f0f0f0;
+      font-size: 15px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #5aa0ff;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    button {
+      background-color: #5aa0ff;
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      margin: 6px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+      min-width: 100px;
+    }
+    button:hover {
+      background-color: #3a83e0;
+    }
+    #logoutBtn {
+      background-color: #ff5a5a;
+    }
+    #logoutBtn:hover {
+      background-color: #d44444;
+    }
+  </style>
+</head>
+<body>
+  <!-- Start Page -->
+  <div id="startPage">
+    <h2>Welcome</h2>
+    <form id="authForm">
+      <input type="text" name="username" placeholder="Username" required autocomplete="off" /><br />
+      <input type="password" name="password" placeholder="Password" required autocomplete="off" /><br />
+      <button type="button" id="signupBtn">Sign Up</button>
+      <button type="button" id="signinBtn">Sign In</button>
+    </form>
+  </div>
+
+  <!-- Dashboard Page -->
+  <div id="dashboard" style="display:none;">
+    <h2>Welcome, <span id="userDisplayName"></span></h2>
+    <form id="actionForm">
+      <select name="action_type" required>
+        <option value="buy">Buy</option>
+        <option value="sell">Sell</option>
+      </select><br />
+      <textarea name="details" placeholder="Enter details" required></textarea><br />
+      <button type="submit">Submit</button>
+    </form>
+    <br />
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <script>
+    let userId = null;
+    let username = null;
+
+    // Signup
+document.getElementById("signupBtn").addEventListener("click", async () => {
+  const form = document.getElementById("authForm");
+  const formData = new FormData(form);
+  const body = new URLSearchParams(formData);
+
+  const res = await fetch("/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
+
+  const data = await res.json();
+  if (res.ok) {
+    alert("Signup successful!");
+    form.reset();
+  } else {
+    alert(data.message);
+  }
+});
+
+// Signin
+document.getElementById("signinBtn").addEventListener("click", async () => {
+  const form = document.getElementById("authForm");
+  const formData = new FormData(form);
+  const body = new URLSearchParams(formData);
+
+  const res = await fetch("/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
+
+  const data = await res.json();
+  if (res.ok) {
+    userId = data.user_id;
+    username = data.username;
+    showDashboard();
+  } else {
+    alert(data.message);
+  }
+});
+
+
+    // Submit Action Form
+    document.getElementById("actionForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      formData.append("user_id", userId);
+      formData.append("username", username);
+      const res = await fetch("/action", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams(formData),
+      });
+      if (res.ok) {
+        alert("Action recorded!");
+        e.target.reset();
+      } else {
+        alert("Failed to submit action");
+      }
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      userId = null;
+      username = null;
+      document.getElementById("actionForm").reset();
+      showStartPage();
+    });
+
+    // Helpers
+    function showDashboard() {
+      document.getElementById("startPage").style.display = "none";
+      document.getElementById("dashboard").style.display = "block";
+      document.getElementById("userDisplayName").textContent = username;
+    }
+
+    function showStartPage() {
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("startPage").style.display = "block";
+      document.getElementById("authForm").reset();
+    }
+  </script>
+</body>
+</html>
